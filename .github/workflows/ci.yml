@@ -32,6 +32,7 @@ jobs:
                     </server>
                   </servers>
                 </settings>" > ~/.m2/settings.xml
+          cat ~/.m2/settings.xml
 
       - name: Build and Test
         run: mvn clean package
