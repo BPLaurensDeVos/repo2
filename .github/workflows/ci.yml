@@ -17,6 +17,32 @@ jobs:
         with:
           java-version: 17
           distribution: 'temurin'
+      
+      - name: Check Artifact Availability
+        run: |
+          curl -u ${{ secrets.GITHUB_ACTOR }}:${{ secrets.PAT_TOKEN }} \
+          -s \
+          -o /dev/null \
+          -w "%{http_code}" \
+          https://maven.pkg.github.com/BPLaurensDeVos/repo1/com/example/repo1/repo1/1.0-SNAPSHOT/repo1-1.0-SNAPSHOT.jar > status_code.txt
+        id: check-artifact
+
+      - name: Trigger Repo1 if Artifact is Missing
+        if: steps.check-artifact.outputs.status_code != '200'
+        run: |
+          curl -X POST \
+          -H "Accept: application/vnd.github.v3+json" \
+          -H "Authorization: token ${{ secrets.PAT_TOKEN }}" \
+          https://api.github.com/repos/<your-organization>/repo1/dispatches \
+          -d '{"event_type":"build-artifact"}'
+
+      - name: Wait for Repo1 Artifact to be Published
+        if: steps.check-artifact.outputs.status_code != '200'
+        run: sleep 30
+
+      - name: Fail Workflow if Artifact Still Missing
+        if: steps.check-artifact.outputs.status_code_retry != '200'
+        run: exit 1
 
       - name: Configure Maven to Use GitHub Packages
         run: |
