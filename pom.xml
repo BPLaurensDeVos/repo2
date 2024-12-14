@@ -50,7 +50,7 @@
   <repositories>
     <repository>
       <id>github</id>
-      <url>https://maven.pkg.github.com/<your-organization>/repo1</url>
+      <url>https://maven.pkg.github.com/BPLaurensDeVos/repo1</url>
     </repository>
   </repositories>
 
