@@ -18,29 +18,13 @@ jobs:
           java-version: 17
           distribution: 'temurin'
       
-      - name: Configure Maven to Use GitHub Packages
-        run: |
-          mkdir -p ~/.m2
-          echo "<settings xmlns='http://maven.apache.org/SETTINGS/1.0.0'
-                        xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
-                        xsi:schemaLocation='http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd'>
-                  <servers>
-                    <server>
-                      <id>github</id>
-                      <username>${{ github.actor }}</username>
-                      <password>${{ secrets.PAT_TOKEN }}</password>
-                    </server>
-                  </servers>
-                </settings>" > ~/.m2/settings.xml
-          cat ~/.m2/settings.xml
-
       - name: Check Artifact Availability
         run: |
           curl -u ${{ github.actor }}:${{ secrets.PAT_TOKEN }} \
           -s \
           -o /dev/null \
           -w "%{http_code}" \
-          https://maven.pkg.github.com/BPLaurensDeVos/repo1/com/example/repo1/repo1/1.0-SNAPSHOT/repo1-1.0-SNAPSHOT.jar > status_code.txt
+          https://maven.pkg.github.com/BPLaurensDeVos/repo1/com/example/repo1/repo1/1.0/repo1-1.0.jar > status_code.txt
         id: check-artifact
 
       - name: check status code
@@ -62,6 +46,22 @@ jobs:
       - name: Fail Workflow if Artifact Still Missing
         if: steps.check-artifact.outputs.status_code_retry != '200'
         run: exit 1
+
+      - name: Configure Maven to Use GitHub Packages
+        run: |
+          mkdir -p ~/.m2
+          echo "<settings xmlns='http://maven.apache.org/SETTINGS/1.0.0'
+                        xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
+                        xsi:schemaLocation='http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd'>
+                  <servers>
+                    <server>
+                      <id>github</id>
+                      <username>${{ github.actor }}</username>
+                      <password>${{ secrets.PAT_TOKEN }}</password>
+                    </server>
+                  </servers>
+                </settings>" > ~/.m2/settings.xml
+          cat ~/.m2/settings.xml
 
       - name: Build and Test
         run: mvn clean package
