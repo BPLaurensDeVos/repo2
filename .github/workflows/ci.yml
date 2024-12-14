@@ -4,7 +4,10 @@ on:
   push:
     branches:
       - main
-
+  repository_dispatch:
+    types:
+      - build-artifact
+      
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
@@ -18,8 +21,8 @@ jobs:
           java-version: 17
           distribution: 'temurin'
       
-      - name: Check Artifact Availability
-        id: check-artifact
+      - name: Check repo1 Artifact Availability
+        id: check-repo1-artifact
         run: |
           STATUS_CODE=$(curl -L -u ${{ github.actor }}:${{ secrets.PAT_TOKEN }} \
                         -s \
@@ -27,16 +30,12 @@ jobs:
                         -w "%{http_code}" \
                         https://maven.pkg.github.com/BPLaurensDeVos/repo1/com/example/repo1/repo1/1.0/repo1-1.0.jar)
           echo "Artifact Status Code: $STATUS_CODE"
-          echo "status_code=$STATUS_CODE" >> $GITHUB_ENV
-
-      - name: Check Status Code
-        run: |
-          echo "Artifact Check Status Code: ${{ env.status_code }}"
+          echo "repo1_status_code=$STATUS_CODE" >> $GITHUB_ENV
 
       - name: Trigger Repo1 if Artifact is Missing 
-        if: env.status_code != '200'
+        if: env.repo1_status_code != '200'
         run: |
-          echo "Artifact not found. Triggering Repo1..."
+          echo "Repo1 artifact not found. Triggering Repo1..."
           curl -X POST \
           -H "Accept: application/vnd.github.v3+json" \
           -H "Authorization: token ${{ secrets.PAT_TOKEN }}" \
@@ -44,13 +43,13 @@ jobs:
           -d '{"event_type":"build-artifact"}'
 
       - name: Wait for Repo1 Artifact to be Published
-        if: env.status_code != '200'
+        if: env.repo1_status_code != '200'
         run: |
           echo "Waiting for Repo1 artifact to be published..."
           sleep 30
 
       - name: Recheck Artifact Availability
-        if: env.status_code != '200'
+        if: env.repo1_status_code != '200'
         id: recheck-artifact
         run: |
           STATUS_CODE=$(curl -L -u ${{ github.actor }}:${{ secrets.PAT_TOKEN }} \
@@ -59,16 +58,16 @@ jobs:
                         -w "%{http_code}" \
                         https://maven.pkg.github.com/BPLaurensDeVos/repo1/com/example/repo1/repo1/1.0/repo1-1.0.jar)
           echo "Rechecked Artifact Status Code: $STATUS_CODE"
-          echo "recheck_status_code=$STATUS_CODE" >> $GITHUB_ENV
+          echo "repo1_recheck_status_code=$STATUS_CODE" >> $GITHUB_ENV
 
       - name: Fail Workflow if Artifact Still Missing
-        if: env.status_code != '200' && env.recheck_status_code != '200'
+        if: env.repo1_status_code != '200' && env.repo1_recheck_status_code != '200'
         run: |
           echo "Artifact still missing after waiting. Failing workflow..."
           exit 1
 
       - name: Configure Maven to Use GitHub Packages
-        if: env.status_code == '200' || env.recheck_status_code == '200'
+        if: env.repo1_status_code == '200' || env.repo1_recheck_status_code == '200'
         run: |
           mkdir -p ~/.m2
           echo "<settings xmlns='http://maven.apache.org/SETTINGS/1.0.0'
@@ -85,5 +84,11 @@ jobs:
           cat ~/.m2/settings.xml
 
       - name: Build and Test
-        if: env.status_code == '200' || env.recheck_status_code == '200'
+        if: env.repo1_status_code == '200' || env.repo1_recheck_status_code == '200'
         run: mvn clean package
+
+      - name: Publish to GitHub Packages
+        run: mvn deploy
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
