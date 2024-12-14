@@ -18,21 +18,20 @@ jobs:
           java-version: 17
           distribution: 'temurin'
 
-      - name: Download Repo1 Artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: repo1-artifact
-
-      - name: Move Repo1 Artifact to Local Maven Repo
+      - name: Configure Maven to Use GitHub Packages
         run: |
-          mkdir -p ~/.m2/repository/com/example/repo1/1.0-SNAPSHOT
-          mv repo1-1.0-SNAPSHOT.jar ~/.m2/repository/com/example/repo1/1.0-SNAPSHOT/repo1-1.0-SNAPSHOT.jar
-      
-      - name: Build and Package
-        run: mvn clean package
+          mkdir -p ~/.m2
+          echo "<settings xmlns='http://maven.apache.org/SETTINGS/1.0.0'
+                        xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
+                        xsi:schemaLocation='http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd'>
+                  <servers>
+                    <server>
+                      <id>github</id>
+                      <username>${{ secrets.GITHUB_ACTOR }}</username>
+                      <password>${{ secrets.PAT_TOKEN }}</password>
+                    </server>
+                  </servers>
+                </settings>" > ~/.m2/settings.xml
 
-      - name: Upload Repo1 Artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: repo1-artifact
-          path: target/repo1-1.0-SNAPSHOT.jar
+      - name: Build and Test
+        run: mvn clean package
