@@ -41,7 +41,7 @@ jobs:
 
       - name: Wait for Repo1 Artifact to be Published
         if: steps.check-artifact.outputs.status_code != '200'
-        run: sleep 30
+        run: sleep 60
 
       - name: Fail Workflow if Artifact Still Missing
         if: steps.check-artifact.outputs.status_code_retry != '200'
