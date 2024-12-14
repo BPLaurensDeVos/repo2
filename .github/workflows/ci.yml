@@ -20,7 +20,7 @@ jobs:
       
       - name: Check Artifact Availability
         run: |
-          curl -u ${{ github.actor }}:${{ secrets.PAT_TOKEN }} \
+          curl -L -u ${{ github.actor }}:${{ secrets.PAT_TOKEN }} \
           -s \
           -o /dev/null \
           -w "%{http_code}" \
