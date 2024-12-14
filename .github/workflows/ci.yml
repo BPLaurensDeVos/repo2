@@ -27,6 +27,9 @@ jobs:
           https://maven.pkg.github.com/BPLaurensDeVos/repo1/com/example/repo1/repo1/1.0-SNAPSHOT/repo1-1.0-SNAPSHOT.jar > status_code.txt
         id: check-artifact
 
+      - name: check status code
+        run: cat status_code.txt
+
       - name: Trigger Repo1 if Artifact is Missing
         if: steps.check-artifact.outputs.status_code != '200'
         run: |
