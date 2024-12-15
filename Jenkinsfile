@@ -16,7 +16,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/BPLaurensDeVos/repo2.git'
+                checkout scm
             }
         }
 
